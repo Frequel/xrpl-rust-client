@@ -1,0 +1,66 @@
+# A comprehensive rustfmt configuration file
+# For a full list of options, see: https://rust-lang.github.io/rustfmt/
+
+# The Rust edition to use for formatting.
+# Crucial for ensuring syntax is formatted correctly for the project's edition.
+# Options: "2015", "2018", "2021", "2024"
+edition = "2024"
+
+# The version of the formatting rules to use.
+# "Two" is the latest stable version as of 2024.
+# version = "Two"
+
+# The maximum width of a line.
+max_width = 100
+
+# Use spaces instead of tabs. This is the idiomatic standard for Rust.
+hard_tabs = false
+
+# Number of spaces per tab. Only used if hard_tabs is true.
+tab_spaces = 4
+
+# How to handle trailing commas in vertical lists (e.g., in structs, enums, function arguments).
+# "Vertical" adds a trailing comma if the list is split across multiple lines.
+# This makes git diffs cleaner when adding new items.
+# Options: "Always", "Never", "Vertical"
+# trailing_comma = "Vertical"
+
+# Reorder `use` statements alphabetically.
+reorder_imports = true
+
+# How to group `use` statements.
+# "StdExternalCrate" groups them into three blocks:
+# 1. `std`, `core`, `alloc`
+# 2. External crates
+# 3. Local project modules (`crate`, `super`, `self`)
+# Options: "Preserve", "StdExternalCrate", "One"
+# group_imports = "StdExternalCrate"
+
+# # How to format string literals. If true, rustfmt will try to re-format them.
+# format_strings = true
+
+# # Wrap comments to fit within the `max_width`.
+# wrap_comments = true
+
+# # Normalize comments by removing extra newlines and leading/trailing whitespace.
+# normalize_comments = true
+
+# # Convert `/*...*/` doc comments to `///`.
+# normalize_doc_attributes = true
+
+# # Don't reorder `mod` statements.
+# reorder_modules = false
+
+# How to format control flow expressions like `if`, `for`, `while`.
+# Default is "Vertical". "Horizontal" can make simple ones more compact.
+# For consistency, "Vertical" is often preferred.
+# control_brace_style = "AlwaysNextLine"
+
+# # Put the else clause on a new line.
+# else_if_on_new_line = true
+
+# # Indent style for function bodies. "Block" is standard.
+# fn_call_style = "Block"
+
+# # Place the opening brace of a struct literal on the same line.
+# struct_lit_single_line = true

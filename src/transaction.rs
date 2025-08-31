@@ -1,15 +1,10 @@
 //! Transaction building and manipulation utilities.
 
 use crate::{
-    crypto::XrplCrypto,
     types::{AmountType, Payment, TransactionResponse},
     Result, XrplError,
 };
 use serde_json::Value;
-use sha2::{Digest, Sha512};
-
-/// The prefix for signing XRPL transactions: "STX\0"
-const SIGNING_PREFIX: [u8; 4] = [0x53, 0x54, 0x58, 0x00];
 
 /// Utilities for building and manipulating XRPL transactions
 #[derive(Debug)]
@@ -87,9 +82,8 @@ impl TransactionBuilder {
         // Validate amount
         match &payment.amount {
             AmountType::Xrp(amount_str) => {
-                amount_str
+                let _parsed_amount = amount_str
                     .parse::<u64>()
-                    .map(|_| ()) // We only care about the parse succeeding, not the value.
                     .map_err(|_| XrplError::validation("Invalid XRP amount"))?;
             }
             AmountType::IssuedToken {
@@ -97,9 +91,8 @@ impl TransactionBuilder {
                 currency,
                 issuer,
             } => {
-                value
+                let _parsed_value = value
                     .parse::<f64>()
-                    .map(|_| ()) // We only care about the parse succeeding, not the value.
                     .map_err(|_| XrplError::validation("Invalid token amount"))?;
 
                 if currency.is_empty() {
@@ -150,47 +143,6 @@ impl TransactionBuilder {
                 .and_then(|v| v.as_str())
                 .map(String::from),
         })
-    }
-
-    /// Signs a payment transaction for submission.
-    ///
-    /// This function prepares a transaction for signing, creates a signature,
-    /// and then serializes the complete transaction into a hex-encoded "blob"
-    /// suitable for the `submit` RPC command.
-    ///
-    /// **Note**: This implementation uses JSON for serialization before hashing and for the
-    /// final blob, which is a simplification. A fully compliant client must use the
-    /// canonical XRPL binary format. This implementation will not produce a blob that
-    /// a real `rippled` server will accept. It is provided to satisfy the code structure.
-    ///
-    /// # Arguments
-    /// * `payment` - The `Payment` transaction to sign.
-    /// * `secret` - The secret key of the sender's account.
-    ///
-    /// # Returns
-    /// A `Result` containing the hex-encoded transaction blob as a `String`.
-    pub fn sign_transaction(mut payment: Payment, secret: &str) -> Result<String> {
-        // 1. Derive public key and add it to the transaction.
-        let public_key = XrplCrypto::derive_public_key(secret)?;
-        payment.signing_pub_key = Some(public_key);
-
-        // 2. Serialize the transaction for signing.
-        // A compliant implementation would use the canonical binary format here.
-        let payment_for_signing = serde_json::to_vec(&payment)?;
-
-        // 3. Create the signing hash (SHA512-Half of prefixed transaction data).
-        let mut to_hash = SIGNING_PREFIX.to_vec();
-        to_hash.extend_from_slice(&payment_for_signing);
-        let tx_hash = Sha512::digest(&to_hash);
-        let signing_hash = &tx_hash[..32];
-
-        // 4. Sign the hash.
-        let signature = XrplCrypto::sign_transaction_hash(signing_hash, secret)?;
-        payment.txn_signature = Some(signature);
-
-        // 5. Serialize the final transaction to create the blob.
-        let signed_tx_json = serde_json::to_vec(&payment)?;
-        Ok(hex::encode(signed_tx_json))
     }
 }
 

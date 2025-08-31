@@ -21,7 +21,7 @@
 //! #[tokio::main]
 //! async fn main() -> Result<(), XrplError> {
 //!     let client = XrplClient::new_testnet();
-//!     
+//!
 //!     let tx_hash = client.send_token(
 //!         "sEdTM1uX8pu2do5XvTnutH6HsouMaM2",  // sender secret
 //!         "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH", // recipient
@@ -29,7 +29,7 @@
 //!         "USD",                                  // currency code
 //!         "100.50"                               // amount
 //!     ).await?;
-//!     
+//!
 //!     println!("Transaction hash: {}", tx_hash);
 //!     Ok(())
 //! }
@@ -45,6 +45,8 @@ pub use client::XrplClient;
 pub use error::XrplError;
 pub use types::*;
 
-// Re-export commonly used types for convenience
-/// A convenient type alias for `Result<T, XrplError>`.
+/// Convenience type alias for Results using `XrplError`
+///
+/// This type alias provides a shorthand for `std::result::Result<T, XrplError>`,
+/// making error handling more ergonomic throughout the XRPL client library.
 pub type Result<T> = std::result::Result<T, XrplError>;

@@ -20,11 +20,11 @@ pub enum XrplError {
     /// XRPL protocol errors
     #[error("XRPL protocol error: {message}")]
     Protocol {
-        /// The error message from the XRPL node.
+        /// Error message describing the protocol issue
         message: String,
     },
 
-    /// Transaction validation errors  
+    /// Transaction validation errors
     #[error("Transaction validation error: {0}")]
     Validation(String),
 

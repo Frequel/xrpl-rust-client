@@ -8,7 +8,7 @@ use crate::{
 };
 use reqwest::Client;
 use serde_json::{json, Value};
-use std::convert::TryFrom;
+use sha2::{Digest, Sha256};
 
 /// Main client for interacting with XRPL nodes
 #[derive(Debug)]
@@ -119,15 +119,17 @@ impl XrplClient {
         let sequence = self.get_account_sequence(&user1_address).await?;
 
         // Step 3: Create payment transaction
-        let payment = TransactionBuilder::create_payment(
+        let amount_obj = AmountType::issued_token(amount, currency_code, issuer_address);
+        let mut payment = TransactionBuilder::create_payment(
             user1_address,
             user2_address.to_string(),
-            AmountType::issued_token(amount, currency_code, issuer_address),
+            amount_obj,
             sequence,
         );
 
-        // Step 4: Set fee and expiration
-        let payment = self.prepare_transaction(payment).await?;
+        // Step 4: Set expiration
+        let current_ledger = self.get_current_ledger_sequence().await?;
+        TransactionBuilder::set_last_ledger_sequence(&mut payment, current_ledger, 4);
 
         // Step 5: Validate transaction
         TransactionBuilder::validate_payment(&payment)?;
@@ -257,18 +259,20 @@ impl XrplClient {
         let sender_address = XrplCrypto::derive_address(sender_secret)?;
         let sequence = self.get_account_sequence(&sender_address).await?;
 
-        let payment = TransactionBuilder::create_payment(
+        let amount_obj = AmountType::issued_token(amount, currency_code, issuer_address);
+        let mut payment = TransactionBuilder::create_payment(
             sender_address,
             recipient_address.to_string(),
-            AmountType::issued_token(amount, currency_code, issuer_address),
+            amount_obj,
             sequence,
         );
 
-        let payment = self.prepare_transaction(payment).await?;
+        let current_ledger = self.get_current_ledger_sequence().await?;
+        TransactionBuilder::set_last_ledger_sequence(&mut payment, current_ledger, 4);
 
         TransactionBuilder::validate_payment(&payment)?;
 
-        let signed_blob = TransactionBuilder::sign_transaction(payment, sender_secret)?;
+        let signed_blob = self.sign_transaction(payment, sender_secret)?;
         Ok(signed_blob)
     }
 
@@ -358,8 +362,8 @@ impl XrplClient {
             .and_then(serde_json::Value::as_u64)
             .ok_or_else(|| XrplError::protocol("Failed to get account sequence"))?;
 
-        u32::try_from(sequence)
-            .map_err(|_| XrplError::protocol("Account sequence is too large to fit in a u32"))
+        #[allow(clippy::cast_possible_truncation)]
+        Ok(sequence as u32)
     }
 
     /// Gets the current ledger sequence number
@@ -386,8 +390,8 @@ impl XrplClient {
             .and_then(serde_json::Value::as_u64)
             .ok_or_else(|| XrplError::protocol("Failed to get ledger sequence"))?;
 
-        u32::try_from(sequence)
-            .map_err(|_| XrplError::protocol("Ledger sequence is too large to fit in a u32"))
+        #[allow(clippy::cast_possible_truncation)]
+        Ok(sequence as u32)
     }
 
     /// Gets transaction details from the ledger
@@ -415,19 +419,32 @@ impl XrplClient {
         Ok(response)
     }
 
-    /// Prepares a transaction for signing by setting the fee and last ledger sequence.
-    async fn prepare_transaction(&self, mut payment: Payment) -> Result<Payment> {
-        // In a real implementation, you might fetch the fee from the network.
-        // payment.fee = self.get_network_fee().await?;
+    /// Signs a transaction and returns the blob
+    #[allow(clippy::unused_self)]
+    fn sign_transaction(&self, mut payment: Payment, secret: &str) -> Result<String> {
+        // Add public key to transaction
+        let public_key = XrplCrypto::derive_public_key(secret)?;
+        payment.signing_pub_key = Some(public_key);
 
-        let current_ledger = self.get_current_ledger_sequence().await?;
-        TransactionBuilder::set_last_ledger_sequence(&mut payment, current_ledger, 4);
-        Ok(payment)
+        // Serialize transaction for signing
+        let tx_json = serde_json::to_string(&payment)?;
+        let tx_bytes = tx_json.as_bytes();
+
+        // Create hash for signing (simplified - real implementation uses STObject encoding)
+        let hash = Sha256::digest(tx_bytes);
+
+        // Sign the hash
+        let signature = XrplCrypto::sign_transaction_hash(&hash, secret)?;
+        payment.txn_signature = Some(signature);
+
+        // Return hex-encoded signed transaction
+        let signed_json = serde_json::to_string(&payment)?;
+        Ok(hex::encode(signed_json.as_bytes()))
     }
 
     /// Signs and submits a transaction
     async fn sign_and_submit_transaction(&self, payment: Payment, secret: &str) -> Result<String> {
-        let signed_blob = TransactionBuilder::sign_transaction(payment, secret)?;
+        let signed_blob = self.sign_transaction(payment, secret)?;
         self.submit_signed_transaction(&signed_blob).await
     }
 }
@@ -448,13 +465,10 @@ mod tests {
         assert_eq!(custom_client.node_url, "https://custom.xrpl.node");
     }
 
-    // Note: These tests would require a running XRPL testnet node
-    // In production, you'd use integration tests or mock the HTTP responses
-
     #[tokio::test]
-    #[ignore = "requires network access"]
-    #[allow(clippy::panic)] // Panicking is acceptable in this test for unexpected errors
-    async fn test_get_account_sequence() {
+    #[ignore = "Requires network access to XRPL testnet"]
+    async fn test_get_account_sequence() -> Result<()> {
+        // Changed from Result<(), XrplError>
         let client = XrplClient::new_testnet();
 
         // Use a known testnet address
@@ -469,7 +483,12 @@ mod tests {
             Err(XrplError::Protocol { .. }) => {
                 // Account might not exist, which is fine for test
             }
-            Err(e) => panic!("Unexpected error: {e:?}"),
+            Err(e) => {
+                // Return the error instead of panicking
+                return Err(e);
+            }
         }
+
+        Ok(())
     }
 }

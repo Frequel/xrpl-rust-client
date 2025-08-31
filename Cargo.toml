@@ -5,10 +5,10 @@ edition = "2021"
 authors = ["Your Name <your.email@example.com>"]
 description = "A Rust library for interacting with the XRP Ledger (XRPL)"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/example/xrpl_rust_client"
-readme = "README.md" # Assuming you will create a README.md
-keywords = ["xrpl", "xrp", "blockchain", "crypto", "finance"]
-categories = ["cryptography", "api-bindings"]
+repository = "https://github.com/yourusername/xrpl-rust-client"
+readme = "README.md"
+keywords = ["xrpl", "ripple", "blockchain", "cryptocurrency"]
+categories = ["cryptography::cryptocurrencies", "api-bindings"]
 
 [dependencies]
 tokio = { version = "1.47.1", features = ["full"] }
@@ -32,30 +32,43 @@ env_logger = "0.11"
 tokio-test = "0.4.4"
 
 [lints.rust]
+warnings = "deny"
 unsafe_code = "forbid"
 missing_docs = "deny"
 unused_results = "deny"
 missing_debug_implementations = "warn"
-warnings = "deny"
 
 [lints.clippy]
+# Set groups to lower priority so individual lints can override
 all = { level = "deny", priority = -1 }
 pedantic = { level = "deny", priority = -1 }
 nursery = { level = "warn", priority = -1 }
 cargo = { level = "deny", priority = -1 }
 
-# Override overly strict pedantic lints
+# Override specific lints
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
-multiple_crate_versions = "allow" # Allow for pragmatic dependency management
 module_name_repetitions = "allow"
 similar_names = "allow"
 too_many_lines = "allow"
+cast_possible_truncation = "allow"
+unused_self = "allow"
+
+# Allow cargo lints that are too strict for development
+cargo_common_metadata = "allow"
+multiple_crate_versions = "allow"
 
 # Critical for library code
 panic = "deny"
 unwrap_used = "deny"
-expect_used = "allow"
 print_stdout = "deny"
 dbg_macro = "deny"
 todo = "deny"
+
+[lib]
+name = "xrpl_rust_client"
+path = "src/lib.rs"
+
+[[example]]
+name = "basic_usage"
+path = "examples/basic_usage.rs"

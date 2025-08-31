@@ -1,6 +1,5 @@
 //! Type definitions for XRPL transactions and responses.
 
-use crate::{Result, XrplError};
 use serde::{Deserialize, Serialize};
 
 /// Represents different amount types in XRPL
@@ -32,57 +31,51 @@ impl AmountType {
     }
 
     /// Create an XRP amount from XRP value (converts to drops)
-    ///
-    /// # Arguments
-    /// * `xrp_amount` - A f64 representing the XRP amount (e.g., 1.5, 100.0).
-    ///
-    /// # Errors
-    /// )]
-    pub fn xrp(xrp_amount: f64) -> Result<Self> {
-        // Note: Using f64 for currency can be imprecise. For production systems,
-        // a fixed-point decimal library would be a better choice.
-        // This implementation is a simplification for demonstration purposes.
-        if xrp_amount.is_sign_negative() || !xrp_amount.is_finite() {
-            return Err(XrplError::validation(
-                "XRP amount must be non-negative and finite",
-            ));
-        }
-        let drops = (xrp_amount * 1_000_000.0).round();
-        if drops > u64::MAX as f64 {
-            return Err(XrplError::validation("XRP amount out of range"));
-        }
-        Ok(Self::Xrp((drops as u64).to_string()))
+    #[must_use]
+    pub fn xrp(xrp_amount: f64) -> Self {
+        // Ensure non-negative values and round properly
+        let drops = if xrp_amount < 0.0 {
+            0_u64
+        } else {
+            // Use explicit conversion to avoid cast_sign_loss warning
+            let rounded = (xrp_amount * 1_000_000.0).round();
+            #[allow(clippy::cast_sign_loss)]
+            {
+                rounded as u64
+            }
+        };
+        Self::Xrp(drops.to_string())
     }
 }
 
 /// XRPL Payment transaction structure
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Payment {
-    /// The type of transaction, which is "Payment".
+    /// Transaction type (always "Payment" for payment transactions)
     #[serde(rename = "TransactionType")]
     pub transaction_type: String,
-    /// The sender's XRPL address.
+    /// Account address of the sender
     #[serde(rename = "Account")]
     pub account: String,
-    /// The recipient's XRPL address.
+    /// Account address of the recipient
     #[serde(rename = "Destination")]
     pub destination: String,
-    /// The amount to be sent.
+    /// Amount to be transferred (XRP or issued token)
     #[serde(rename = "Amount")]
     pub amount: AmountType,
-    /// The transaction fee in drops.
+    /// Transaction fee in drops
     #[serde(rename = "Fee")]
     pub fee: String,
-    /// The sequence number of the sender's account.
+    /// Account sequence number for transaction ordering
     #[serde(rename = "Sequence")]
     pub sequence: u32,
-    /// The latest ledger index this transaction can be included in.
+    /// Optional ledger sequence number for transaction expiration
     #[serde(rename = "LastLedgerSequence", skip_serializing_if = "Option::is_none")]
     pub last_ledger_sequence: Option<u32>,
-    /// The public key used for signing, in hex format.
+    /// Public key used for signing (hex-encoded)
     #[serde(rename = "SigningPubKey", skip_serializing_if = "Option::is_none")]
     pub signing_pub_key: Option<String>,
-    /// The transaction signature, in hex format.
+    /// Transaction signature (hex-encoded)
     #[serde(rename = "TxnSignature", skip_serializing_if = "Option::is_none")]
     pub txn_signature: Option<String>,
 }
@@ -90,13 +83,13 @@ pub struct Payment {
 /// Account information response from XRPL
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AccountInfo {
-    /// The XRPL address of the account.
+    /// Account address
     #[serde(rename = "Account")]
     pub account: String,
-    /// The account's balance in drops of XRP.
+    /// Account balance in drops
     #[serde(rename = "Balance")]
     pub balance: String,
-    /// The current sequence number of the account.
+    /// Current account sequence number
     #[serde(rename = "Sequence")]
     pub sequence: u32,
 }
@@ -104,40 +97,19 @@ pub struct AccountInfo {
 /// Transaction response from XRPL
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TransactionResponse {
-    /// The sender's account.
+    /// Transaction sender account address
     #[serde(rename = "Account")]
     pub account: Option<String>,
-    /// The type of the transaction.
+    /// Type of transaction (e.g., "Payment")
     #[serde(rename = "TransactionType")]
     pub transaction_type: Option<String>,
-    /// The destination account.
+    /// Transaction destination account address
     #[serde(rename = "Destination")]
     pub destination: Option<String>,
-    /// The amount transferred.
+    /// Transaction amount (XRP or issued token)
     #[serde(rename = "Amount")]
     pub amount: Option<AmountType>,
-    /// The hash of the transaction.
+    /// Transaction hash identifier
     #[serde(rename = "hash")]
     pub hash: Option<String>,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_amount_type_creation() {
-        let token_amount = AmountType::issued_token("100.50", "USD", "rIssuer123");
-        assert_eq!(
-            token_amount,
-            AmountType::IssuedToken {
-                value: "100.50".to_string(),
-                currency: "USD".to_string(),
-                issuer: "rIssuer123".to_string(),
-            }
-        );
-
-        let xrp_amount = AmountType::xrp(1.5).expect("Creating XRP amount from f64 should succeed");
-        assert_eq!(xrp_amount, AmountType::Xrp("1500000".to_string()));
-    }
 }

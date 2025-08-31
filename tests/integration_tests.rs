@@ -1,14 +1,11 @@
 //! Integration tests for XRPL client functionality.
 
-// Lints are disabled for tests because `unwrap` and `panic` are common in test code.
-#![allow(clippy::unwrap_used, clippy::panic)]
-
 use xrpl_rust_client::{crypto::XrplCrypto, types::AmountType, XrplClient};
 
 #[tokio::test]
 async fn test_address_derivation() {
     let secret = "sEdTM1uX8pu2do5XvTnutH6HsouMaM2";
-    let address = XrplCrypto::derive_address(secret).unwrap();
+    let address = XrplCrypto::derive_address(secret).expect("Invalid secret");
 
     assert!(address.len() >= 25);
     assert!(address.starts_with('r') || address.starts_with('X'));
@@ -18,6 +15,7 @@ async fn test_address_derivation() {
 async fn test_amount_type_creation() {
     let token_amount = AmountType::issued_token("100.50", "USD", "rIssuer123");
 
+    #[allow(clippy::panic)]
     match token_amount {
         AmountType::IssuedToken {
             value,
@@ -31,7 +29,9 @@ async fn test_amount_type_creation() {
         AmountType::Xrp(_) => panic!("Expected IssuedToken variant"),
     }
 
-    let xrp_amount = AmountType::xrp(1.5).unwrap();
+    let xrp_amount = AmountType::xrp(1.5);
+
+    #[allow(clippy::panic)]
     match xrp_amount {
         AmountType::Xrp(drops) => {
             assert_eq!(drops, "1500000");
@@ -51,11 +51,6 @@ async fn test_client_instantiation() {
     drop(mainnet_client);
     drop(custom_client);
 }
-
-// Note: Full integration tests would require either:
-// 1. A mock XRPL server (using wiremock crate)
-// 2. Access to live testnet with funded accounts
-// 3. Docker container running rippled in standalone mode
 
 #[tokio::test]
 async fn test_error_handling() {

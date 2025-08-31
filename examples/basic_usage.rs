@@ -1,7 +1,6 @@
 //! Basic usage example for the XRPL client library.
 
-// Examples are allowed to print to stdout for demonstration purposes.
-#![allow(clippy::print_stdout)]
+#![allow(clippy::print_stdout)] // Allow prints in examples
 
 use xrpl_rust_client::{XrplClient, XrplError};
 

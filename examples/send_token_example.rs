@@ -13,9 +13,10 @@ async fn main() -> Result<(), XrplError> {
     let client = XrplClient::new_testnet();
 
     // Example test data (these would be real values in production)
-    let sender_secret = "sEdTM1uX8pu2do5XvTnutH6HsouMaM2";
+    let sender_secret = "sn3nxiW7v8KXzPzAqzyHXbSSKNuN9";
     let recipient_address = "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH";
     let issuer_address = "rUoCf4ixGkbmxkUEkF4jdB5ajm7Tqd8SfG";
+
     let currency_code = "USD";
     let amount = "100.50";
 

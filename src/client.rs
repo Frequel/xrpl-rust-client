@@ -93,7 +93,7 @@ impl XrplClient {
     /// let client = XrplClient::new_testnet();
     ///
     /// let tx_hash = client.send_token(
-    ///     "sEdTM1uX8pu2do5XvTnutH6HsouMaM2",
+    ///     "sn3nxiW7v8KXzPzAqzyHXbSSKNuN9",
     ///     "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
     ///     "rUoCf4ixGkbmxkUEkF4jdB5ajm7Tqd8SfG",
     ///     "USD",
@@ -237,7 +237,7 @@ impl XrplClient {
     /// let client = XrplClient::new_testnet();
     ///
     /// let signed_blob = client.sign_transaction_offline(
-    ///     "sEdTM1uX8pu2do5XvTnutH6HsouMaM2",
+    ///     "sn3nxiW7v8KXzPzAqzyHXbSSKNuN9",
     ///     "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
     ///     "rUoCf4ixGkbmxkUEkF4jdB5ajm7Tqd8SfG",
     ///     "USD",

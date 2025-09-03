@@ -15,7 +15,7 @@
 //!
 //! ## Example
 //!
-//! ```
+//! ```no_run
 //! use xrpl_rust_client::{XrplClient, XrplError};
 //!
 //! #[tokio::main]
@@ -23,11 +23,11 @@
 //!     let client = XrplClient::new_testnet();
 //!
 //!     let tx_hash = client.send_token(
-//!         "sEdTM1uX8pu2do5XvTnutH6HsouMaM2",  // sender secret
+//!         "sn3nxiW7v8KXzPzAqzyHXbSSKNuN9", // sender secret
 //!         "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH", // recipient
 //!         "rUoCf4ixGkbmxkUEkF4jdB5ajm7Tqd8SfG", // token issuer
-//!         "USD",                                  // currency code
-//!         "100.50"                               // amount
+//!         "USD", // currency code
+//!         "100.50" // amount
 //!     ).await?;
 //!
 //!     println!("Transaction hash: {}", tx_hash);

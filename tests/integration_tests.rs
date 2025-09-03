@@ -4,9 +4,8 @@ use xrpl_rust_client::{crypto::XrplCrypto, types::AmountType, XrplClient};
 
 #[tokio::test]
 async fn test_address_derivation() {
-    let secret = "sEdTM1uX8pu2do5XvTnutH6HsouMaM2";
+    let secret = "sn3nxiW7v8KXzPzAqzyHXbSSKNuN9";
     let address = XrplCrypto::derive_address(secret).expect("Invalid secret");
-
     assert!(address.len() >= 25);
     assert!(address.starts_with('r') || address.starts_with('X'));
 }

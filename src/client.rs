@@ -6,6 +6,7 @@ use crate::{
     types::{AmountType, Payment},
     Result, XrplError,
 };
+
 use reqwest::Client;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -368,30 +369,79 @@ impl XrplClient {
 
     /// Gets the current ledger sequence number
     async fn get_current_ledger_sequence(&self) -> Result<u32> {
-        let request = json!({
-            "method": "ledger",
-            "params": [{
-                "ledger_index": "current"
-            }]
+        // 1) Try ledger_current (fast, may be in flux)
+        let req_current = serde_json::json!({
+            "method": "ledger_current",
+            "params": [{}]
         });
-
-        let response: Value = self
+        let resp_current: serde_json::Value = self
             .client
             .post(&self.node_url)
-            .json(&request)
+            .json(&req_current)
             .send()
             .await?
             .json()
             .await?;
-
-        let sequence = response
+        if let Some(idx) = resp_current
             .get("result")
-            .and_then(|r| r.get("ledger_index"))
+            .and_then(|r| r.get("ledger_current_index"))
             .and_then(serde_json::Value::as_u64)
-            .ok_or_else(|| XrplError::protocol("Failed to get ledger sequence"))?;
+        {
+            #[allow(clippy::cast_possible_truncation)]
+            return Ok(idx as u32);
+        }
 
-        #[allow(clippy::cast_possible_truncation)]
-        Ok(sequence as u32)
+        // 2) Try a validated ledger index (stable)
+        let req_validated = serde_json::json!({
+            "method": "ledger",
+            "params": [{
+                "ledger_index": "validated",
+                "transactions": false,
+                "expand": false
+            }]
+        });
+        let resp_validated: serde_json::Value = self
+            .client
+            .post(&self.node_url)
+            .json(&req_validated)
+            .send()
+            .await?
+            .json()
+            .await?;
+        if let Some(idx) = resp_validated
+            .get("result")
+            .and_then(|r| {
+                r.get("ledger_index")
+                    .or_else(|| r.get("ledger").and_then(|l| l.get("ledger_index")))
+            })
+            .and_then(serde_json::Value::as_u64)
+        {
+            #[allow(clippy::cast_possible_truncation)]
+            return Ok(idx as u32);
+        }
+
+        // 3) Fallback: server_info → validated_ledger.seq (works on many providers)
+        let req_info = serde_json::json!({ "method": "server_info", "params": [{}] });
+        let resp_info: serde_json::Value = self
+            .client
+            .post(&self.node_url)
+            .json(&req_info)
+            .send()
+            .await?
+            .json()
+            .await?;
+        if let Some(seq) = resp_info
+            .get("result")
+            .and_then(|r| r.get("info"))
+            .and_then(|i| i.get("validated_ledger"))
+            .and_then(|v| v.get("seq"))
+            .and_then(serde_json::Value::as_u64)
+        {
+            #[allow(clippy::cast_possible_truncation)]
+            return Ok(seq as u32);
+        }
+
+        Err(XrplError::protocol("Failed to get ledger sequence"))
     }
 
     /// Gets transaction details from the ledger
@@ -468,10 +518,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "Requires network access to XRPL testnet"]
     async fn test_get_account_sequence() -> Result<()> {
-        // Changed from Result<(), XrplError>
         let client = XrplClient::new_testnet();
-
-        // Use a known testnet address
         let result = client
             .get_account_sequence("rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH")
             .await;

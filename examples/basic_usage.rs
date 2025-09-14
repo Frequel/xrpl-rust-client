@@ -1,5 +1,19 @@
 //! Basic usage example for the XRPL client library.
 
+// ############################################################################
+//
+//  This example demonstrates the basic functionality of the XRPL client.
+//
+//  **NOTE:** To run this example successfully, you need a funded testnet
+//  account. You can obtain one from the XRPL Testnet Faucet:
+//  https://xrpl.org/xrp-testnet-faucet.html
+//
+//  Once you have a testnet account, replace the placeholder values for
+//  `sender_secret`, `recipient_address`, and `issuer_address` with your
+//  actual testnet credentials.
+//
+// ############################################################################
+
 #![allow(clippy::print_stdout)] // Allow prints in examples
 
 use xrpl_rust_client::{XrplClient, XrplError};
@@ -11,10 +25,14 @@ async fn main() -> Result<(), XrplError> {
     // Create client (using testnet for safety)
     let client = XrplClient::new_testnet();
 
-    // Example test data (these would be real values in production)
-    let sender_secret = "sn3nxiW7v8KXzPzAqzyHXbSSKNuN9";
-    let recipient_address = "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH";
-    let issuer_address = "rUoCf4ixGkbmxkUEkF4jdB5ajm7Tqd8SfG";
+    // --------------------------------------------------------------------------
+    //  **Replace these with your actual testnet credentials**
+    // --------------------------------------------------------------------------
+    let sender_secret = "sEdTG7PmRY3aiDerSN3H7wdEYoUvBh1"; // Your sender secret rw54tKBLiapKe9JrK2ngCoidPAKqu9c3d4 address
+    let recipient_address = "raJ5CijZSgVxMDSdN8qax8p45dzVBCKKzD"; // Your recipient address
+    let issuer_address = "rNeBZcpupzGnNWJqRynF362CYCNGfBeDVb"; // Your issuer address
+                                                               // --------------------------------------------------------------------------
+
     let currency_code = "USD";
     let amount = "100.50";
 

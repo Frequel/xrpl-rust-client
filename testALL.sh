@@ -31,3 +31,18 @@ echo
 
 # Run tests
 cargo test
+
+# Run examples
+echo
+echo "running basic_usage example"
+echo
+
+# Run example 1
+cargo run --example basic_usage
+
+echo
+echo "running send_token_example example"
+echo
+
+# Run example 2
+cargo run --example send_token_example

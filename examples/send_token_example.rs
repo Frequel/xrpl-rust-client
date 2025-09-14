@@ -1,5 +1,19 @@
 //! A simple example for sending a token.
 
+// ############################################################################
+//
+//  This example demonstrates how to send a token.
+//
+//  **NOTE:** To run this example successfully, you need a funded testnet
+//  account. You can obtain one from the XRPL Testnet Faucet:
+//  https://xrpl.org/xrp-testnet-faucet.html
+//
+//  Once you have a testnet account, replace the placeholder values for
+//  `sender_secret`, `recipient_address`, and `issuer_address` with your
+//  actual testnet credentials.
+//
+// ############################################################################
+
 // Examples are allowed to print to stdout for demonstration purposes.
 #![allow(clippy::print_stdout)]
 
@@ -12,10 +26,13 @@ async fn main() -> Result<(), XrplError> {
     // Create client (using testnet for safety)
     let client = XrplClient::new_testnet();
 
-    // Example test data (these would be real values in production)
-    let sender_secret = "sn3nxiW7v8KXzPzAqzyHXbSSKNuN9";
-    let recipient_address = "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH";
-    let issuer_address = "rUoCf4ixGkbmxkUEkF4jdB5ajm7Tqd8SfG";
+    // --------------------------------------------------------------------------
+    //  **Replace these with your actual testnet credentials**
+    // --------------------------------------------------------------------------
+    let sender_secret = "sn3nxiW7v8KXzPzAqzyHXbSSKNuN9"; // Your sender secret
+    let recipient_address = "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH"; // Your recipient address
+    let issuer_address = "rUoCf4ixGkbmxkUEkF4jdB5ajm7Tqd8SfG"; // Your issuer address
+                                                               // --------------------------------------------------------------------------
 
     let currency_code = "USD";
     let amount = "100.50";
@@ -39,7 +56,7 @@ async fn main() -> Result<(), XrplError> {
         Err(e) => {
             println!("❌ Error sending token: {e}");
             println!(
-                "   (This is expected if using example test data on a live testnet without account setup)."
+                "   (This is expected if using placeholder test data on a live testnet without account setup)."
             );
         }
     }

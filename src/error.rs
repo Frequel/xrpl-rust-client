@@ -17,6 +17,14 @@ pub enum XrplError {
     #[error("Cryptographic error: {0}")]
     Crypto(#[from] secp256k1::Error),
 
+    /// Ed25519 errors
+    #[error("Ed25519 error: {0}")]
+    Ed25519(#[from] ed25519_dalek::SignatureError),
+
+    /// Hex decoding errors
+    #[error("Hex decoding error: {0}")]
+    Hex(#[from] hex::FromHexError),
+
     /// XRPL protocol errors
     #[error("XRPL protocol error: {message}")]
     Protocol {

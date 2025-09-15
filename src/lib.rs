@@ -36,6 +36,7 @@
 //! ```
 
 pub mod client;
+pub mod codec;
 pub mod crypto;
 pub mod error;
 pub mod transaction;

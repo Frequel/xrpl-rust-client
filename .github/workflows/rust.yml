@@ -1,0 +1,32 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Clean
+      run: cargo clean
+    - name: Format
+      run: cargo fmt
+    - name: Build
+      run: cargo build --verbose
+    - name: Linting
+      run: cargo clippy --all-targets --all-features
+    - name: Run tests
+      run: cargo test --verbose
+    - name: Example1 
+      run: cargo run --example basic_usage
+    - name: Example2
+      run: cargo run --example send_token_example

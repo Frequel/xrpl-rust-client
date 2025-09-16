@@ -34,6 +34,7 @@ impl TransactionBuilder {
             destination: recipient,
             amount,
             fee: "12".to_string(), // Standard fee in drops
+            flags: Some(2147483648), // tfFullyCanonicalSig
             sequence,
             last_ledger_sequence: None,
             signing_pub_key: None,

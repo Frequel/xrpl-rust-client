@@ -74,7 +74,7 @@ impl BinarySerializer {
     }
 
     /// Writes a field ID based on type and field codes.
-    fn write_field_id(&mut self, type_code: i32, field_code: i32) {
+    pub(super) fn write_field_id(&mut self, type_code: i32, field_code: i32) {
         let type_code = type_code as u8;
         let field_code = field_code as u8;
 
@@ -94,7 +94,7 @@ impl BinarySerializer {
     }
 
     /// Writes an `AccountID` field.
-    pub fn write_account_id(&mut self, address: &str) -> Result<()> {
+    pub fn write_account_id(&mut self, address: &str, vl_prefixed: bool) -> Result<()> {
         let decoded = bs58::decode(address)
             .with_alphabet(Alphabet::RIPPLE)
             .into_vec()
@@ -108,7 +108,11 @@ impl BinarySerializer {
             ));
         }
         let account_id = &decoded[1..21];
-        self.write_bytes(account_id);
+        if vl_prefixed {
+            self.write_vl(account_id);
+        } else {
+            self.write_bytes(account_id);
+        }
         Ok(())
     }
 
@@ -213,7 +217,7 @@ impl BinarySerializer {
         self.write_currency(currency)?;
 
         // 3. Serialize the issuer
-        self.write_account_id(issuer)?;
+        self.write_account_id(issuer, false)?; // Issuer in Amount is not VL-prefixed
 
         Ok(())
     }
@@ -249,8 +253,9 @@ mod tests {
     fn test_write_account_id() -> Result<()> {
         let mut serializer = BinarySerializer::new();
         let address = "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH";
-        serializer.write_account_id(address)?;
-        let expected_hex = "93B89AFCAD4C8EAC2B131C1331FEF12AE1522BBE";
+        serializer.write_account_id(address, true)?;
+        // 0x14 is the length prefix for 20 bytes.
+        let expected_hex = "1493B89AFCAD4C8EAC2B131C1331FEF12AE1522BBE";
         assert_eq!(hex::encode_upper(serializer.to_vec()), expected_hex);
         Ok(())
     }
@@ -301,6 +306,7 @@ mod tests {
             issuer: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH".to_string(),
         };
         serializer.write_amount(&amount)?;
+        // Amount + Currency + Issuer (no VL prefix)
         let expected_hex = "D50462C56DF9A800000000000000000000000000555344000000000093B89AFCAD4C8EAC2B131C1331FEF12AE1522BBE";
         assert_eq!(hex::encode_upper(serializer.to_vec()), expected_hex);
         Ok(())

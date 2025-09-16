@@ -1,6 +1,7 @@
 //! Main XRPL client implementation.
 
 use crate::{
+    codec,
     crypto::XrplCrypto,
     transaction::TransactionBuilder,
     types::{AmountType, Payment},
@@ -9,7 +10,7 @@ use crate::{
 
 use reqwest::Client;
 use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha512};
 
 /// Main client for interacting with XRPL nodes
 #[derive(Debug)]
@@ -472,24 +473,26 @@ impl XrplClient {
     /// Signs a transaction and returns the blob
     #[allow(clippy::unused_self)]
     fn sign_transaction(&self, mut payment: Payment, secret: &str) -> Result<String> {
-        // Add public key to transaction
+        // Add public key to transaction before serializing for signing.
         let public_key = XrplCrypto::derive_public_key(secret)?;
         payment.signing_pub_key = Some(public_key);
 
-        // Serialize transaction for signing
-        let tx_json = serde_json::to_string(&payment)?;
-        let tx_bytes = tx_json.as_bytes();
+        // Serialize for signing hash
+        let signing_bytes = codec::to_bytes_for_signing(&payment)?;
 
-        // Create hash for signing (simplified - real implementation uses STObject encoding)
-        let hash = Sha256::digest(tx_bytes);
+        // Prepend signing prefix and hash
+        let mut to_hash = Vec::new();
+        to_hash.extend_from_slice(&[0x53, 0x54, 0x58, 0x00]); // "STX\0"
+        to_hash.extend_from_slice(&signing_bytes);
+        let hash = &Sha512::digest(to_hash)[..32];
 
         // Sign the hash
-        let signature = XrplCrypto::sign_transaction_hash(&hash, secret)?;
+        let signature = XrplCrypto::sign_transaction_hash(hash, secret)?;
         payment.txn_signature = Some(signature);
 
-        // Return hex-encoded signed transaction
-        let signed_json = serde_json::to_string(&payment)?;
-        Ok(hex::encode(signed_json.as_bytes()))
+        // Serialize for final submission
+        let final_blob = codec::to_bytes_final(&payment)?;
+        Ok(hex::encode(final_blob))
     }
 
     /// Signs and submits a transaction

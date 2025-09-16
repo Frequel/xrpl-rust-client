@@ -66,6 +66,9 @@ pub struct Payment {
     /// Transaction fee in drops
     #[serde(rename = "Fee")]
     pub fee: String,
+    /// Transaction flags
+    #[serde(rename = "Flags", skip_serializing_if = "Option::is_none")]
+    pub flags: Option<u32>,
     /// Account sequence number for transaction ordering
     #[serde(rename = "Sequence")]
     pub sequence: u32,
